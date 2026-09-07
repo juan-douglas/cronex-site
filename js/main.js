@@ -7,12 +7,12 @@ const CONTATO = {
   whatsappLabel: "(61) 99965-7097",
   email: "contato@cronex.com.br",
 
-  // Cole aqui a URL do app do Google Apps Script (arquivo apps-script-cronex.gs).
-  // Enquanto estiver vazio, o formulário continua abrindo o WhatsApp, só não grava na planilha.
-  planilha: "https://script.google.com/macros/s/AKfycbx8P9Z4VZTGKmdUlSaMMH3kWzryIJBCjYZcoRd3dwxpvfjAmzyMjFVsQwnAX340poRQZg/exec"
+  // URL do app da Web do Google Apps Script (código em apps-script-cronex.gs).
+  // Vazio = o formulário só abre o WhatsApp, sem gravar na planilha.
+  planilha: "https://script.google.com/macros/s/AKfycbysxRZlp6OpV-H_rC38zqbBrNmHlXw6Oheko2CNb_893V-xAOUfyLXIxCLVW2_JUOfn/exec"
 };
 
-const VERSAO = 'CRONEX site v8';
+const VERSAO = 'CRONEX site v9';
 console.info(VERSAO + ' carregado');
 
 const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
