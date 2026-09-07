@@ -7,5 +7,8 @@
 /index.html
   Content-Type: text/html; charset=utf-8
 
+# Obs.: o Cloudflare serve o 404.html pelo handler de "not_found_handling"
+# (wrangler.jsonc), que não passa por este arquivo — então esta regra hoje
+# não tem efeito. Mantida por intenção; o <meta charset> no HTML já cobre.
 /404.html
   Content-Type: text/html; charset=utf-8
