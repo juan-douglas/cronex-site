@@ -10,6 +10,7 @@ Site estático separado em HTML, CSS, JS e assets. Publicado como Cloudflare Wor
 ```
 cronex-site/
 ├── index.html              markup apenas (~29 KB)
+├── 404.html                página de erro (Cloudflare serve em rota inexistente)
 ├── css/
 │   └── style.css           todo o CSS
 ├── js/
@@ -61,7 +62,7 @@ subdomínio workers.dev é `thecronexweb`.
    # PowerShell, dentro de cronex-site/
    Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
    New-Item -ItemType Directory dist | Out-Null
-   Copy-Item index.html,robots.txt,sitemap.xml,og-cover.jpg dist
+   Copy-Item index.html,404.html,robots.txt,sitemap.xml,og-cover.jpg dist
    Copy-Item css,js,assets dist -Recurse
    ```
 

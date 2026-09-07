@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Página não encontrada — CRONEX</title>
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#07060B" />
+<link rel="icon" href="assets/favicon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700;800&family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css" />
+
+<style>
+/* ---------- página 404 ---------- */
+.e404{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:22px;padding:120px var(--pad) 80px}
+.e404 .brand{margin:0 0 4px}
+.e404 .brand img{width:34px}
+.e404 .code{font-family:var(--display);font-weight:800;line-height:1;letter-spacing:-.04em;
+  font-size:clamp(5.5rem,22vw,11rem);
+  background:linear-gradient(120deg,var(--lilac),var(--violet-bright) 45%,#fff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 12px 40px rgba(157,56,211,.35))}
+.e404 h1{font-size:clamp(1.4rem,3.4vw,2.1rem)}
+.e404 p{color:var(--steel);max-width:46ch}
+.e404 .hero-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="atmos" aria-hidden="true">
+  <div class="mesh"></div>
+  <div class="aurora a"></div>
+  <div class="aurora b"></div>
+  <div class="aurora c"></div>
+  <div class="gridlines"></div>
+</div>
+<div class="spot" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<main class="wrap e404">
+  <a href="/" class="brand" aria-label="CRONEX, início">
+    <img src="assets/img/marca-cronex-sm.webp" alt="" width="140" height="94" />
+  </a>
+  <div class="code" aria-hidden="true">404</div>
+  <h1>Essa página saiu do ar.</h1>
+  <p>O endereço que você abriu não existe ou foi movido. Volte ao início e siga a partir de lá.</p>
+  <div class="hero-cta">
+    <a class="btn btn-main" href="/">Voltar ao início</a>
+    <a class="btn btn-ghost" href="/#solucoes">Ver soluções</a>
+  </div>
+</main>
+
+<script>
+/* luz que segue o cursor, igual à home */
+(function () {
+  var mm = window.matchMedia('(pointer:fine)');
+  if (!mm.matches) return;
+  document.body.classList.add('has-pointer');
+  addEventListener('pointermove', function (e) {
+    document.body.style.setProperty('--mx', e.clientX + 'px');
+    document.body.style.setProperty('--my', e.clientY + 'px');
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
