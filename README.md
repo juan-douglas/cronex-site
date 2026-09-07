@@ -25,6 +25,7 @@ cronex-site/
 ├── og-cover.jpg            cópia na raiz (as tags OG apontam para a URL absoluta /og-cover.jpg)
 ├── robots.txt
 ├── sitemap.xml
+├── _headers                cabeçalhos do Cloudflare (charset UTF-8 nas páginas HTML)
 ├── wrangler.jsonc          config do deploy (Worker "cronex", serve ./dist)
 ├── dist/                   pasta publicada, gerada a partir da raiz (ver "Deploy")
 ├── limpa_fundo.py          utilitário de imagem
@@ -62,7 +63,7 @@ subdomínio workers.dev é `thecronexweb`.
    # PowerShell, dentro de cronex-site/
    Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
    New-Item -ItemType Directory dist | Out-Null
-   Copy-Item index.html,404.html,robots.txt,sitemap.xml,og-cover.jpg dist
+   Copy-Item index.html,404.html,robots.txt,sitemap.xml,og-cover.jpg,_headers dist
    Copy-Item css,js,assets dist -Recurse
    ```
 
