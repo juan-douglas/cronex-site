@@ -128,9 +128,20 @@ Web App do Google Apps Script. O código do backend está em
 `apps-script-cronex.gs`.
 
 Fluxo: `js/main.js` (`salvarLead`) faz `POST` para a URL `/exec` do Web App →
-o script adiciona uma linha na aba **Leads** com as colunas `recebido_em`,
-`data_cliente`, `nome`, `empresa`, `telefone`, `email`, `segmento`, `pacote`,
-`mensagem`, `origem`.
+o script grava em duas abas:
+
+- **Leads** — histórico, uma linha por envio: `recebido_em`, `data_cliente`,
+  `nome`, `empresa`, `telefone`, `email`, `segmento`, `pacote`, `mensagem`,
+  `origem`.
+- **Contatos** — uma linha por pessoa (deduplicada por telefone, ou e-mail se
+  não houver telefone): `id` (`CRX-0001`, sequencial e fixo), `nome`, `empresa`,
+  `telefone`, `email`, `segmento`, `pacote_interesse`, `primeiro_contato`,
+  `ultimo_contato`, `qtd_contatos`, `origem`. A cada envio: telefone novo → cria
+  linha com o próximo ID; telefone já visto → atualiza `ultimo_contato`, soma
+  +1 em `qtd_contatos` e refresca os campos que vieram preenchidos.
+
+A função `reconstruirContatos()` (rodar pelo editor, uso único) recria a aba
+**Contatos** a partir de todo o histórico de **Leads** — reatribui os IDs.
 
 ### Instalar / recriar
 
@@ -153,8 +164,12 @@ o script adiciona uma linha na aba **Leads** com as colunas `recebido_em`,
 ### Ao alterar o script
 
 Cada mudança no `.gs` só vale depois de **Implantar → Gerenciar implantações →
-editar (lápis) → Versão: Nova versão**. Criar uma implantação nova gera outra URL
-(e aí tem que atualizar o `main.js` de novo).
+editar (lápis) → Versão: Nova versão → Implantar**. Isso mantém a mesma URL.
+Criar uma implantação *nova* gera outra URL (e aí tem que atualizar o `main.js`).
+
+O erro clássico `ReferenceError: window is not defined` significa que sobrou
+código de navegador (o `main.js`) colado no editor — o Apps Script roda no
+servidor, não tem `window`. Deixar só o conteúdo de `apps-script-cronex.gs`.
 
 ## Logo
 
