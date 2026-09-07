@@ -1,19 +1,23 @@
 /**
  * CRONEX — captura de leads do formulário do site.
  *
- * Aba "Leads":    um registro por envio do formulário (histórico completo).
- * Aba "Contatos": uma linha por pessoa, deduplicada por telefone (ou e-mail),
- *                 com ID fixo CRX-0001, primeiro/último contato e quantas
- *                 vezes a pessoa procurou.
+ * Aba "Leads":           um registro por envio do formulário (histórico completo).
+ * Aba "Contatos":        uma linha por pessoa, deduplicada por telefone (ou e-mail),
+ *                        com ID fixo CRX-0001, primeiro/último contato e quantas
+ *                        vezes a pessoa procurou.
+ * Aba "Cliques WhatsApp": um registro por clique no link "WhatsApp rápido" do site
+ *                        (data/hora, página e dispositivo — sem nome nem telefone).
  *
- * O site (js/main.js, função salvarLead) faz um POST
- * application/x-www-form-urlencoded para a URL /exec deste Web App.
+ * O site (js/main.js) faz POST application/x-www-form-urlencoded para /exec:
+ *  - formulário: sem 'tipo'  -> Leads + Contatos
+ *  - clique wpp: tipo=clique_wpp -> Cliques WhatsApp
  *
  * Instalação e deploy: ver README.md, seção "Planilha de leads".
  */
 
 var ABA_LEADS = 'Leads';
 var ABA_CONTATOS = 'Contatos';
+var ABA_CLIQUES = 'Cliques WhatsApp';
 
 var COLUNAS_LEADS = [
   'recebido_em', 'data_cliente', 'nome', 'empresa', 'telefone',
@@ -25,6 +29,8 @@ var COLUNAS_CONTATOS = [
   'pacote_interesse', 'primeiro_contato', 'ultimo_contato', 'qtd_contatos', 'origem'
 ];
 
+var COLUNAS_CLIQUES = ['data_hora', 'data_cliente', 'botao', 'pagina', 'dispositivo'];
+
 var PREFIXO_ID = 'CRX-';
 
 function doPost(e) {
@@ -33,8 +39,13 @@ function doPost(e) {
   try {
     var p = (e && e.parameter) ? e.parameter : {};
     var quando = new Date();
-    registrarLead_(p, quando);
-    atualizarContato_(p, quando);
+
+    if (p.tipo === 'clique_wpp') {
+      registrarClique_(p, quando);
+    } else {
+      registrarLead_(p, quando);
+      atualizarContato_(p, quando);
+    }
     return json_({ ok: true });
   } catch (err) {
     return json_({ ok: false, erro: String(err) });
@@ -55,6 +66,12 @@ function registrarLead_(p, quando) {
     quando, p.data || '', p.nome || '', p.empresa || '', p.telefone || '',
     p.email || '', p.segmento || '', p.pacote || '', p.mensagem || '', p.origem || ''
   ]);
+}
+
+/* ---------- aba Cliques WhatsApp: um registro por clique ---------- */
+function registrarClique_(p, quando) {
+  var aba = obterAba_(ABA_CLIQUES, COLUNAS_CLIQUES);
+  aba.appendRow([quando, p.data || '', p.botao || '', p.pagina || '', p.dispositivo || '']);
 }
 
 /* ---------- aba Contatos: uma linha por pessoa ---------- */

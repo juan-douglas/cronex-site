@@ -12,7 +12,7 @@ const CONTATO = {
   planilha: "https://script.google.com/macros/s/AKfycbzOIz4YBfM6JsVgVgCPLHH3pW08NuGWgNZ4FqDYGWrqwJfGg8Y79v53pW_cXWB_0S23/exec"
 };
 
-const VERSAO = 'CRONEX site v11';
+const VERSAO = 'CRONEX site v12';
 console.info(VERSAO + ' carregado');
 
 const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -179,8 +179,8 @@ tel.addEventListener('input', () => {
             : d;
 });
 
-/* ---- grava o lead na planilha (Google Apps Script) ---- */
-function salvarLead(dados) {
+/* ---- envia dados para a planilha (Google Apps Script) ---- */
+function enviarPlanilha(dados) {
   if (!CONTATO.planilha) return Promise.resolve();          // ainda não configurado
   return fetch(CONTATO.planilha, {
     method: 'POST',
@@ -188,6 +188,19 @@ function salvarLead(dados) {
     body: new URLSearchParams(dados)                        // formato simples, sem preflight
   }).catch(() => {});                                       // falha na gravação não trava o contato
 }
+
+/* ---- registra o clique no "WhatsApp rápido" (aba Cliques WhatsApp) ----
+   Sem nome nem telefone: o link só abre o WhatsApp, o site não tem esses dados. */
+function logarCliqueWpp(botao) {
+  enviarPlanilha({
+    tipo: 'clique_wpp',
+    botao: botao,
+    pagina: location.href,
+    dispositivo: matchMedia('(pointer:fine)').matches ? 'desktop' : 'celular',
+    data: new Date().toLocaleString('pt-BR')
+  });
+}
+if ($('#waLine')) $('#waLine').addEventListener('click', () => logarCliqueWpp('contato: WhatsApp rápido'));
 
 /* ---- formulário: valida, grava e monta a mensagem do WhatsApp ---- */
 const form = $('#form'), status = $('#formStatus');
@@ -232,7 +245,7 @@ form.addEventListener('submit', e => {
     `Pacote: ${dados.pacote}\n` +
     (dados.mensagem ? `\nO que preciso: ${dados.mensagem}` : '');
 
-  salvarLead(dados).finally(() => {
+  enviarPlanilha(dados).finally(() => {
     status.textContent = 'Contato registrado. Abrindo o WhatsApp...';
     status.classList.add('ok');
     window.open(waMsg(texto), '_blank', 'noopener');

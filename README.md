@@ -127,18 +127,23 @@ O formulário de contato grava cada envio numa planilha do Google Sheets, via um
 Web App do Google Apps Script. O código do backend está em
 `apps-script-cronex.gs`.
 
-Fluxo: `js/main.js` (`salvarLead`) faz `POST` para a URL `/exec` do Web App →
-o script grava em duas abas:
+Fluxo: `js/main.js` (`enviarPlanilha`) faz `POST` para a URL `/exec` do Web App.
+O script grava em três abas conforme o campo `tipo`:
 
-- **Leads** — histórico, uma linha por envio: `recebido_em`, `data_cliente`,
-  `nome`, `empresa`, `telefone`, `email`, `segmento`, `pacote`, `mensagem`,
-  `origem`.
-- **Contatos** — uma linha por pessoa (deduplicada por telefone, ou e-mail se
-  não houver telefone): `id` (`CRX-0001`, sequencial e fixo), `nome`, `empresa`,
-  `telefone`, `email`, `segmento`, `pacote_interesse`, `primeiro_contato`,
-  `ultimo_contato`, `qtd_contatos`, `origem`. A cada envio: telefone novo → cria
-  linha com o próximo ID; telefone já visto → atualiza `ultimo_contato`, soma
-  +1 em `qtd_contatos` e refresca os campos que vieram preenchidos.
+- **Leads** (envio do formulário) — histórico, uma linha por envio:
+  `recebido_em`, `data_cliente`, `nome`, `empresa`, `telefone`, `email`,
+  `segmento`, `pacote`, `mensagem`, `origem`.
+- **Contatos** (envio do formulário) — uma linha por pessoa (deduplicada por
+  telefone, ou e-mail se não houver telefone): `id` (`CRX-0001`, sequencial e
+  fixo), `nome`, `empresa`, `telefone`, `email`, `segmento`, `pacote_interesse`,
+  `primeiro_contato`, `ultimo_contato`, `qtd_contatos`, `origem`. A cada envio:
+  telefone novo → cria linha com o próximo ID; telefone já visto → atualiza
+  `ultimo_contato`, soma +1 em `qtd_contatos` e refresca os campos preenchidos.
+- **Cliques WhatsApp** (`tipo=clique_wpp`) — um registro por clique no link
+  "WhatsApp rápido" da seção de contato: `data_hora`, `data_cliente`, `botao`,
+  `pagina`, `dispositivo`. Sem nome nem telefone — o link só abre o WhatsApp,
+  o site não tem esses dados. O CTA principal do hero passa pelo formulário
+  (registra lead completo), então só o link rápido cai aqui.
 
 A função `reconstruirContatos()` (rodar pelo editor, uso único) recria a aba
 **Contatos** a partir de todo o histórico de **Leads** — reatribui os IDs.
