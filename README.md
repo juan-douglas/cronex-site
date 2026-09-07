@@ -96,6 +96,30 @@ Ao mudar de domínio, atualizar os quatro arquivos e refazer a `dist/`.
   vezes, o que o navegador baixa uma vez só.
 - `index.html` caiu de ~335 KB para ~29 KB.
 
+## Histórico
+
+### 2026-09 — modularização e publicação
+
+- `index.html` reconvertido de arquivo único (~335 KB, tudo inline) para a
+  estrutura modular atual (~29 KB). A reconversão partiu do arquivo único, que
+  estava mais novo, preservando o WhatsApp real e a URL do Apps Script.
+- Projeto reorganizado: pasta única `cronex-site/`, cópias duplicadas removidas.
+- Repositório Git iniciado e publicado em
+  https://github.com/juan-douglas/cronex-site (público).
+- Deploy no Cloudflare como Worker de static assets (`wrangler.jsonc` + `dist/`),
+  em `https://cronex.thecronexweb.workers.dev`. A URL antiga que aparecia nos
+  metadados (`cronex.juan06douglas.workers.dev`) nunca existiu — corrigida em
+  `index.html`, `robots.txt` e `sitemap.xml`.
+- `404.html` adicionado (reaproveita `css/style.css`, `noindex`); o Cloudflare
+  serve em rota inexistente via `not_found_handling` no `wrangler.jsonc`.
+- `_headers` adicionado para servir as páginas HTML com
+  `Content-Type: text/html; charset=utf-8`. Vale para `/` e `/index.html`; o
+  `404.html` fica de fora porque é servido pelo handler de not-found, que não
+  passa pelo `_headers` (o `<meta charset>` no HTML cobre esse caso).
+- Card de compartilhamento (Open Graph / Twitter) conferido em produção:
+  imagem 1200×630, tags corretas, acessível aos scrapers de Facebook, WhatsApp,
+  Twitter, Slack e LinkedIn. Validado no Facebook Debugger e no opengraph.xyz.
+
 ## Logo
 
 A marca vem do render em PNG com fundo preto. O pipeline aplicado:
