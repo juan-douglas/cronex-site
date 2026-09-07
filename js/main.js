@@ -9,10 +9,10 @@ const CONTATO = {
 
   // URL do app da Web do Google Apps Script (código em apps-script-cronex.gs).
   // Vazio = o formulário só abre o WhatsApp, sem gravar na planilha.
-  planilha: "https://script.google.com/macros/s/AKfycbysxRZlp6OpV-H_rC38zqbBrNmHlXw6Oheko2CNb_893V-xAOUfyLXIxCLVW2_JUOfn/exec"
+  planilha: "https://script.google.com/macros/s/AKfycbzOIz4YBfM6JsVgVgCPLHH3pW08NuGWgNZ4FqDYGWrqwJfGg8Y79v53pW_cXWB_0S23/exec"
 };
 
-const VERSAO = 'CRONEX site v9';
+const VERSAO = 'CRONEX site v10';
 console.info(VERSAO + ' carregado');
 
 const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
