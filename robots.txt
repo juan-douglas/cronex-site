@@ -1,0 +1,5 @@
+# CRONEX — Digital Solutions & Automation
+User-agent: *
+Allow: /
+
+Sitemap: https://cronex.thecronexweb.workers.dev/sitemap.xml

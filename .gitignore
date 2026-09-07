@@ -1,0 +1,16 @@
+# Build / deploy gerados
+dist/
+.wrangler/
+
+# Dependências
+node_modules/
+
+# Segredos
+.env
+.env.*
+*.token
+*.txt.secret
+
+# SO / editor
+.DS_Store
+Thumbs.db
