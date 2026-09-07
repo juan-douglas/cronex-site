@@ -27,6 +27,7 @@ cronex-site/
 ├── sitemap.xml
 ├── _headers                cabeçalhos do Cloudflare (charset UTF-8 nas páginas HTML)
 ├── wrangler.jsonc          config do deploy (Worker "cronex", serve ./dist)
+├── apps-script-cronex.gs   backend da planilha de leads (ver "Planilha de leads")
 ├── dist/                   pasta publicada, gerada a partir da raiz (ver "Deploy")
 ├── limpa_fundo.py          utilitário de imagem
 └── logo_final.py           pipeline da marca (ver "Logo")
@@ -119,6 +120,41 @@ Ao mudar de domínio, atualizar os quatro arquivos e refazer a `dist/`.
 - Card de compartilhamento (Open Graph / Twitter) conferido em produção:
   imagem 1200×630, tags corretas, acessível aos scrapers de Facebook, WhatsApp,
   Twitter, Slack e LinkedIn. Validado no Facebook Debugger e no opengraph.xyz.
+
+## Planilha de leads
+
+O formulário de contato grava cada envio numa planilha do Google Sheets, via um
+Web App do Google Apps Script. O código do backend está em
+`apps-script-cronex.gs`.
+
+Fluxo: `js/main.js` (`salvarLead`) faz `POST` para a URL `/exec` do Web App →
+o script adiciona uma linha na aba **Leads** com as colunas `recebido_em`,
+`data_cliente`, `nome`, `empresa`, `telefone`, `email`, `segmento`, `pacote`,
+`mensagem`, `origem`.
+
+### Instalar / recriar
+
+1. Criar uma planilha em <https://sheets.new> (ex.: "CRONEX — Leads").
+2. Nela: **Extensões → Apps Script**.
+3. Apagar o conteúdo de `Código.gs` e colar o de `apps-script-cronex.gs`. Salvar.
+4. **Implantar → Nova implantação** → tipo **App da Web**:
+   - *Executar como*: **Eu**
+   - *Quem pode acessar*: **Qualquer pessoa**
+   - Implantar → autorizar o acesso na primeira vez.
+5. Copiar a **URL do app da Web** (termina em `/exec`).
+6. Colar essa URL em `CONTATO.planilha` no `js/main.js`, refazer a `dist/` e dar
+   deploy (ver "Deploy").
+
+### Testar
+
+- Abrir a URL `/exec` no navegador → deve responder um JSON `{"ok":true,...}`.
+- Enviar o formulário no site → conferir a linha nova na aba **Leads**.
+
+### Ao alterar o script
+
+Cada mudança no `.gs` só vale depois de **Implantar → Gerenciar implantações →
+editar (lápis) → Versão: Nova versão**. Criar uma implantação nova gera outra URL
+(e aí tem que atualizar o `main.js` de novo).
 
 ## Logo
 
