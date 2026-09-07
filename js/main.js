@@ -12,7 +12,7 @@ const CONTATO = {
   planilha: "https://script.google.com/macros/s/AKfycbzOIz4YBfM6JsVgVgCPLHH3pW08NuGWgNZ4FqDYGWrqwJfGg8Y79v53pW_cXWB_0S23/exec"
 };
 
-const VERSAO = 'CRONEX site v10';
+const VERSAO = 'CRONEX site v11';
 console.info(VERSAO + ' carregado');
 
 const reduz = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -23,12 +23,12 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 $('#ano').textContent = new Date().getFullYear();
 const waBase = "https://wa.me/" + CONTATO.whatsapp;
 const waMsg  = t => waBase + "?text=" + encodeURIComponent(t);
-$('#waLine').href  = waMsg("Olá! Vim pelo site da CRONEX.");
+$('#waLine').href  = waMsg("Olá! Vim pelo site da CRONEX.");   // WhatsApp rápido, na seção de contato
 $('#waText').textContent = CONTATO.whatsappLabel;
 $('#mailLine').href = "mailto:" + CONTATO.email;
 $('#mailText').textContent = CONTATO.email;
-$('#heroWa').href = waMsg("Olá! Vim pelo site da CRONEX e quero falar sobre um projeto.");
-$('#heroWa').target = '_blank';
+// O CTA principal do hero (#heroWa) mantém o href="#contato" do HTML: leva ao
+// formulário, que registra o lead na planilha antes de abrir o WhatsApp.
 
 /* ---- nav fixa ---- */
 const nav = $('#nav');
