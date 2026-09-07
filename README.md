@@ -121,6 +121,24 @@ Ao mudar de domínio, atualizar os quatro arquivos e refazer a `dist/`.
   imagem 1200×630, tags corretas, acessível aos scrapers de Facebook, WhatsApp,
   Twitter, Slack e LinkedIn. Validado no Facebook Debugger e no opengraph.xyz.
 
+### 2026-09 — planilha de leads
+
+- Backend em `apps-script-cronex.gs` (Web App do Google Apps Script) ligado a
+  uma planilha do Google Sheets. O `main.js` (`enviarPlanilha`) faz `POST` para
+  a URL `/exec`; ver seção "Planilha de leads" para o detalhe.
+- **Aba Leads** — cada envio do formulário vira uma linha (histórico).
+- **Aba Contatos** — uma linha por pessoa, deduplicada por telefone, com ID fixo
+  `CRX-0001`, `primeiro_contato`/`ultimo_contato` e `qtd_contatos`.
+- **CTA do hero** ("Falar no WhatsApp" → **"Falar com a CRONEX"**) deixou de
+  abrir o `wa.me` direto e passou a levar ao formulário, para registrar o lead
+  antes do WhatsApp. O link "WhatsApp rápido" da seção de contato segue direto.
+- **Aba Cliques WhatsApp** — registra cada clique nesse link rápido (`data_hora`,
+  `pagina`, `dispositivo`; sem nome nem telefone, que o site não tem).
+- `VERSAO` no `main.js`: v8 (URL da planilha) → v12 (log de cliques).
+- Deploys do Cloudflare desta fase feitos com `CLOUDFLARE_API_TOKEN` temporário
+  (o `wrangler login` não persiste nesta máquina); `git push` do terminal do
+  usuário funciona normalmente.
+
 ## Planilha de leads
 
 O formulário de contato grava cada envio numa planilha do Google Sheets, via um
