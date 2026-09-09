@@ -15,7 +15,19 @@ const CONTATO = {
   // Isto NÃO é uma senha: qualquer visitante lê este arquivo. É só um filtro
   // para quem chega pela URL solta. Quem protege a planilha de verdade é o
   // texto_() do Apps Script, que impede fórmula de ser gravada.
-  chave: ""
+  chave: "",
+
+  /* --- migração dos leads para o banco (docs/plano-leads-no-banco.md) ---
+     Os dois campos abaixo VAZIOS = nada muda: o formulário segue gravando só
+     na planilha, como sempre fez. Preencher os dois liga a escrita dupla
+     (Fase 2): o lead passa a ir para a planilha E para o sistema, e dá para
+     comparar os dois lados antes de desligar a planilha.
+
+     sistema  — endpoint público do Worker de gestão
+     sitekey  — chave PÚBLICA do Cloudflare Turnstile (a secreta fica no
+                Worker, em TURNSTILE_SECRET; esta aqui pode ficar exposta) */
+  sistema: "",
+  turnstileSitekey: ""
 };
 
 const VERSAO = 'CRONEX site v12';
@@ -214,6 +226,60 @@ function enviarPlanilha(dados) {
   }).catch(() => {});                                       // falha na gravação não trava o contato
 }
 
+/* ---- Turnstile: só aparece se houver sitekey configurada ----
+   Injetado por JavaScript, e não escrito no HTML, para que o site possa ser
+   publicado com a migração ainda desligada sem mostrar um widget quebrado. */
+function montarTurnstile() {
+  if (!CONTATO.turnstileSitekey) return;
+  const alvo = $('#form button[type="submit"]');   // o widget vem antes do botão
+  if (!alvo) return;
+
+  const caixa = document.createElement('div');
+  caixa.className = 'cf-turnstile';
+  caixa.style.margin = '10px 0';
+  caixa.dataset.sitekey = CONTATO.turnstileSitekey;
+  caixa.dataset.theme = 'dark';
+  alvo.parentNode.insertBefore(caixa, alvo);
+
+  const s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+  s.async = s.defer = true;
+  document.head.appendChild(s);
+}
+montarTurnstile();
+
+/** Manda o lead para o sistema de gestão. Silencioso: quem dá o retorno ao
+    visitante é o caminho da planilha, enquanto a escrita dupla durar. */
+async function enviarSistema(dados) {
+  if (!CONTATO.sistema) return { pulado: true };
+  const corpo = new URLSearchParams({
+    nome: dados.nome,
+    empresa: dados.empresa || '',
+    telefone: dados.telefone || '',
+    email: dados.email || '',
+    segmento: dados.segmento || '',
+    pacote_interesse: dados.pacote || '',
+    mensagem: dados.mensagem || ''
+  });
+  // o widget grava o token num input escondido dentro do formulário
+  const t = document.querySelector('[name="cf-turnstile-response"]');
+  if (t && t.value) corpo.set('cf-turnstile-response', t.value);
+
+  try {
+    const r = await fetch(CONTATO.sistema, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: corpo
+    });
+    return await r.json().catch(() => ({}));
+  } catch (e) {
+    return { erro: 'rede' };
+  } finally {
+    // um token do Turnstile vale um envio só
+    if (window.turnstile) { try { window.turnstile.reset(); } catch {} }
+  }
+}
+
 /* ---- registra o clique no "WhatsApp rápido" (aba Cliques WhatsApp) ----
    Sem nome nem telefone: o link só abre o WhatsApp, o site não tem esses dados. */
 function logarCliqueWpp(botao) {
@@ -270,7 +336,10 @@ form.addEventListener('submit', e => {
     `Pacote: ${dados.pacote}\n` +
     (dados.mensagem ? `\nO que preciso: ${dados.mensagem}` : '');
 
-  enviarPlanilha(dados).finally(() => {
+  /* Escrita dupla enquanto a migração não termina: os dois destinos recebem,
+     e o WhatsApp abre de qualquer jeito. Nenhum dos dois pode segurar o
+     contato — perder o lead é pior que perder o registro. */
+  Promise.allSettled([enviarPlanilha(dados), enviarSistema(dados)]).then(() => {
     status.textContent = 'Contato registrado. Abrindo o WhatsApp...';
     status.classList.add('ok');
     window.open(waMsg(texto), '_blank', 'noopener');
