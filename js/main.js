@@ -26,8 +26,8 @@ const CONTATO = {
      sistema  — endpoint público do Worker de gestão
      sitekey  — chave PÚBLICA do Cloudflare Turnstile (a secreta fica no
                 Worker, em TURNSTILE_SECRET; esta aqui pode ficar exposta) */
-  sistema: "",
-  turnstileSitekey: ""
+  sistema: "https://cronex-sistema.thecronexweb.workers.dev/api/publico/lead",
+  turnstileSitekey: "0x4AAAAAAEtauYkiLdz5v0Qq"
 };
 
 const VERSAO = 'CRONEX site v12';

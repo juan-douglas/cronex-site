@@ -13,6 +13,11 @@
 #  - form-action 'none' é proposital: o formulário é enviado por JavaScript,
 #    com preventDefault(). Se o JS falhar, é melhor não enviar do que despejar
 #    nome e telefone na barra de endereço de um GET.
+#  - challenges.cloudflare.com em script-src e frame-src é o Turnstile: o
+#    script dele monta um iframe. Sem os dois o widget some em silêncio.
+#  - cronex-sistema.thecronexweb.workers.dev em connect-src é o destino novo
+#    dos leads (docs/plano-leads-no-banco.md). script.google.com sai daqui na
+#    Fase 4, quando a planilha for desligada.
 #  - HSTS entra agora porque o TLD .dev já força HTTPS por pré-carregamento nos
 #    navegadores — mas essa proteção some no dia que o site virar cronex.com.br.
 
@@ -22,7 +27,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; form-action 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://cronex-sistema.thecronexweb.workers.dev; form-action 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'
 
 # Garante UTF-8 nas páginas HTML.
 /
