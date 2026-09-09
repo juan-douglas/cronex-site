@@ -184,6 +184,35 @@ A função `reconstruirContatos()` (rodar pelo editor, uso único) recria a aba
 - Abrir a URL `/exec` no navegador → deve responder um JSON `{"ok":true,...}`.
 - Enviar o formulário no site → conferir a linha nova na aba **Leads**.
 
+### Exportar para o sistema de gestão
+
+O `cronex-sistema` puxa a aba **Leads** desta planilha. Para ligar:
+
+1. No editor do Apps Script, no topo do arquivo, defina um valor longo e
+   aleatório em `SEGREDO_EXPORTACAO`:
+
+   ```js
+   var SEGREDO_EXPORTACAO = 'cole-aqui-algo-longo-e-aleatorio';
+   ```
+
+   Sem isso a exportação fica desligada — de propósito: **qualquer pessoa com a
+   URL `/exec` leria a base de leads inteira**.
+
+2. **Implantar → Gerenciar implantações → editar (lápis) → Nova versão →
+   Implantar** (mantém a mesma URL).
+
+3. No sistema: **Configurações → Planilhas**, cole a URL `/exec` e o **mesmo**
+   valor do segredo. Clique em **Testar conexão** — deve dizer quantas linhas
+   tem a aba.
+
+4. **Importar leads agora** traz o que ainda não existe. A deduplicação é por
+   telefone (só os dígitos) ou, na falta dele, por e-mail — importar duas vezes
+   não duplica nada.
+
+Testar direto no navegador:
+`…/exec?acao=exportar&segredo=SEU_SEGREDO` → deve devolver a lista em JSON.
+Sem o segredo correto responde `{"erro":"segredo invalido"}`.
+
 ### Ao alterar o script
 
 Cada mudança no `.gs` só vale depois de **Implantar → Gerenciar implantações →
