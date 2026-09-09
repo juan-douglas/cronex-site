@@ -188,15 +188,20 @@ A função `reconstruirContatos()` (rodar pelo editor, uso único) recria a aba
 
 O `cronex-sistema` puxa a aba **Leads** desta planilha. Para ligar:
 
-1. No editor do Apps Script, no topo do arquivo, defina um valor longo e
-   aleatório em `SEGREDO_EXPORTACAO`:
+1. No editor do Apps Script: **Configurações do projeto** (engrenagem) →
+   **Propriedades do script** → **Adicionar propriedade**.
 
-   ```js
-   var SEGREDO_EXPORTACAO = 'cole-aqui-algo-longo-e-aleatorio';
-   ```
+   | Propriedade | Valor |
+   |---|---|
+   | `SEGREDO_EXPORTACAO` | algo longo e aleatório |
 
    Sem isso a exportação fica desligada — de propósito: **qualquer pessoa com a
    URL `/exec` leria a base de leads inteira**.
+
+   > O segredo mora nas Propriedades, e não numa linha do `.gs`, porque colar
+   > uma versão nova do arquivo por cima apagaria o valor e derrubaria a
+   > importação **em silêncio**. Assim o arquivo pode ser colado e versionado
+   > sem carregar segredo nenhum.
 
 2. **Implantar → Gerenciar implantações → editar (lápis) → Nova versão →
    Implantar** (mantém a mesma URL).
@@ -212,6 +217,32 @@ O `cronex-sistema` puxa a aba **Leads** desta planilha. Para ligar:
 Testar direto no navegador:
 `…/exec?acao=exportar&segredo=SEU_SEGREDO` → deve devolver a lista em JSON.
 Sem o segredo correto responde `{"erro":"segredo invalido"}`.
+
+### Proteção da escrita
+
+O `doPost` é público: a URL está no JavaScript do site e qualquer um pode
+chamá-la. Três camadas no `apps-script-cronex.gs`, em ordem de importância:
+
+| Camada | O que faz |
+|---|---|
+| `texto_()` | valor que começa com `=` `+` `-` `@` é gravado como **texto**. Sem isso, um `=IMPORTXML(...)` no campo nome entrega a base de contatos a quem enviou, no instante em que você abre a planilha |
+| `limitado_()` | teto de 5 gravações por remetente e 100 no total, a cada 10 min |
+| `SEGREDO_ENVIO` | filtro opcional. **Não é autenticação**: a chave viaja no JavaScript do site e é visível no navegador |
+
+Duas funções para rodar pelo editor (selecionar o nome → **Executar** → ler em
+**Execuções**):
+
+- `conferirInstalacao()` — diz se as propriedades estão no lugar e prova que a
+  neutralização de fórmula funciona. Rode **antes** de implantar.
+- `procurarFormulas()` — varre as três abas atrás de célula que o Sheets esteja
+  tratando como fórmula. Rode **uma vez** depois de implantar, para conferir o
+  que já estava gravado. Qualquer fórmula numa coluna de dado de cliente é
+  suspeita: apague a célula, veja para onde ela apontava e trate como incidente.
+
+**Se for ligar o `SEGREDO_ENVIO`, a ordem importa.** Publique o site primeiro
+com `CONTATO.chave` preenchido (o script antigo ignora o parâmetro a mais) e só
+depois crie a propriedade no Apps Script. Ao contrário, o formulário para de
+gravar sem dar erro nenhum.
 
 ### Ao alterar o script
 
