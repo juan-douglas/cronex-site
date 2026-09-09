@@ -1,10 +1,37 @@
-# Cloudflare lê este arquivo e aplica os cabeçalhos às respostas.
-# Objetivo: garantir charset UTF-8 nas páginas HTML.
+# Cabeçalhos que o Cloudflare aplica às respostas do site.
+#
+# ATENÇÃO: um único bloco /* — declarar /* duas vezes faz o segundo vencer e o
+# primeiro sumir sem erro nenhum.
+#
+# Regras que valem a pena entender antes de mexer:
+#
+#  - style-src precisa de 'unsafe-inline': o index.html tem style="" inline nas
+#    barrinhas da prévia. Tirar o inline do HTML permitiria endurecer aqui.
+#  - connect-src precisa de script.google.com E script.googleusercontent.com:
+#    o formulário grava na planilha por fetch, e o Apps Script redireciona para
+#    o segundo domínio. Sem os dois, o lead deixa de ser registrado.
+#  - form-action 'none' é proposital: o formulário é enviado por JavaScript,
+#    com preventDefault(). Se o JS falhar, é melhor não enviar do que despejar
+#    nome e telefone na barra de endereço de um GET.
+#  - HSTS entra agora porque o TLD .dev já força HTTPS por pré-carregamento nos
+#    navegadores — mas essa proteção some no dia que o site virar cronex.com.br.
 
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; form-action 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'
+
+# Garante UTF-8 nas páginas HTML.
 /
   Content-Type: text/html; charset=utf-8
 
 /index.html
+  Content-Type: text/html; charset=utf-8
+
+/privacidade.html
   Content-Type: text/html; charset=utf-8
 
 # Obs.: o Cloudflare serve o 404.html pelo handler de "not_found_handling"

@@ -5,11 +5,17 @@
 const CONTATO = {
   whatsapp: "5561999657097",           // DDI + DDD + número, só dígitos
   whatsappLabel: "(61) 99965-7097",
-  email: "contato@cronex.com.br",
+  email: "cronexsuporte@gmail.com",
 
   // URL do app da Web do Google Apps Script (código em apps-script-cronex.gs).
   // Vazio = o formulário só abre o WhatsApp, sem gravar na planilha.
-  planilha: "https://script.google.com/macros/s/AKfycbzOIz4YBfM6JsVgVgCPLHH3pW08NuGWgNZ4FqDYGWrqwJfGg8Y79v53pW_cXWB_0S23/exec"
+  planilha: "https://script.google.com/macros/s/AKfycbzOIz4YBfM6JsVgVgCPLHH3pW08NuGWgNZ4FqDYGWrqwJfGg8Y79v53pW_cXWB_0S23/exec",
+
+  // Precisa ser igual a SEGREDO_ENVIO no apps-script-cronex.gs.
+  // Isto NÃO é uma senha: qualquer visitante lê este arquivo. É só um filtro
+  // para quem chega pela URL solta. Quem protege a planilha de verdade é o
+  // texto_() do Apps Script, que impede fórmula de ser gravada.
+  chave: ""
 };
 
 const VERSAO = 'CRONEX site v12';
@@ -149,14 +155,32 @@ const io = new IntersectionObserver(es => {
 }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
 $$('.rv').forEach(el => io.observe(el));
 
-/* ---- botões magnéticos ---- */
+/* ---- botões magnéticos ----
+   Antes, cada pointermove chamava getBoundingClientRect() e logo em seguida
+   escrevia o transform. Ler força o navegador a recalcular o layout na hora;
+   escrever invalida o layout de novo. Ler-escrever-ler-escrever, a até mil
+   eventos por segundo em mouse de alta taxa, é layout thrashing na thread
+   principal — os outros dois efeitos de ponteiro deste arquivo já agrupavam em
+   requestAnimationFrame, este tinha ficado de fora.
+   Agora a medida sai uma vez por hover (o botão não anda durante o hover) e a
+   escrita acontece no momento em que o navegador ia desenhar de qualquer jeito. */
 if (!reduz && matchMedia('(pointer:fine)').matches) {
   $$('.mag').forEach(el => {
+    let caixa = null, quadro = null;
+    el.addEventListener('pointerenter', () => { caixa = el.getBoundingClientRect(); });
     el.addEventListener('pointermove', e => {
-      const r = el.getBoundingClientRect();
-      el.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .16}px, ${(e.clientY - r.top - r.height / 2) * .22 - 3}px)`;
+      if (!caixa || quadro) return;
+      const x = e.clientX, y = e.clientY;
+      quadro = requestAnimationFrame(() => {
+        el.style.transform =
+          `translate(${(x - caixa.left - caixa.width / 2) * .16}px, ${(y - caixa.top - caixa.height / 2) * .22 - 3}px)`;
+        quadro = null;
+      });
+    }, { passive: true });
+    el.addEventListener('pointerleave', () => {
+      if (quadro) { cancelAnimationFrame(quadro); quadro = null; }
+      el.style.transform = ''; caixa = null;
     });
-    el.addEventListener('pointerleave', () => el.style.transform = '');
   });
 }
 
@@ -182,10 +206,11 @@ tel.addEventListener('input', () => {
 /* ---- envia dados para a planilha (Google Apps Script) ---- */
 function enviarPlanilha(dados) {
   if (!CONTATO.planilha) return Promise.resolve();          // ainda não configurado
+  const corpo = CONTATO.chave ? { ...dados, chave: CONTATO.chave } : dados;
   return fetch(CONTATO.planilha, {
     method: 'POST',
     mode: 'no-cors',                                        // evita bloqueio de CORS
-    body: new URLSearchParams(dados)                        // formato simples, sem preflight
+    body: new URLSearchParams(corpo)                        // formato simples, sem preflight
   }).catch(() => {});                                       // falha na gravação não trava o contato
 }
 
@@ -230,7 +255,7 @@ form.addEventListener('submit', e => {
     segmento: c.segmento.value,
     pacote: c.pacote.value,
     mensagem: c.msg.value.trim(),
-    origem: location.href
+    origem: 'site'   // rótulo curto; a URL inteira poluía a listagem do sistema de gestão
   };
 
   status.classList.remove('bad');

