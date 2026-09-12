@@ -17,7 +17,7 @@ const CONTATO = {
   // texto_() do Apps Script, que impede fórmula de ser gravada.
   chave: "",
 
-  /* --- migração dos leads para o banco (docs/plano-leads-no-banco.md) ---
+  /* --- migração dos leads para o banco (docs/planos/plano-leads-no-banco.md) ---
      Os dois campos abaixo VAZIOS = nada muda: o formulário segue gravando só
      na planilha, como sempre fez. Preencher os dois liga a escrita dupla
      (Fase 2): o lead passa a ir para a planilha E para o sistema, e dá para

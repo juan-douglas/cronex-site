@@ -11,6 +11,7 @@ Site estático separado em HTML, CSS, JS e assets. Publicado como Cloudflare Wor
 cronex-site/
 ├── index.html              markup apenas (~29 KB)
 ├── 404.html                página de erro (Cloudflare serve em rota inexistente)
+├── privacidade.html        política de privacidade (link no rodapé, LGPD)
 ├── css/
 │   └── style.css           todo o CSS
 ├── js/
@@ -29,8 +30,9 @@ cronex-site/
 ├── wrangler.jsonc          config do deploy (Worker "cronex", serve ./dist)
 ├── apps-script-cronex.gs   backend da planilha de leads (ver "Planilha de leads")
 ├── dist/                   pasta publicada, gerada a partir da raiz (ver "Deploy")
-├── limpa_fundo.py          utilitário de imagem
-└── logo_final.py           pipeline da marca (ver "Logo")
+└── scripts/                utilitários de imagem — não vão pro ar
+    ├── limpa_fundo.py      tira o véu violeta do recorte da marca
+    └── logo_final.py       pipeline da marca (ver "Logo")
 ```
 
 `dist/` e `.wrangler/` são gerados — não precisam ser versionados.
@@ -58,13 +60,14 @@ subdomínio workers.dev é `thecronexweb`.
    npx wrangler login
    ```
 
-2. Montar a pasta `dist/` com o que vai pro ar (tudo menos README, `.py`, config):
+2. Montar a pasta `dist/` com o que vai pro ar (tudo menos README, `scripts/`,
+   config):
 
    ```bash
    # PowerShell, dentro de cronex-site/
    Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
    New-Item -ItemType Directory dist | Out-Null
-   Copy-Item index.html,404.html,robots.txt,sitemap.xml,og-cover.jpg,_headers dist
+   Copy-Item index.html,privacidade.html,404.html,robots.txt,sitemap.xml,og-cover.jpg,_headers dist
    Copy-Item css,js,assets dist -Recurse
    ```
 
@@ -264,4 +267,7 @@ A marca vem do render em PNG com fundo preto. O pipeline aplicado:
 3. Duas saídas: 800px para o bloco 3D do hero, 140px para o header.
 4. `favicon.png` 96px e `og-cover.jpg` 1200x630 gerados da mesma fonte.
 
-O script está em `logo_final.py` caso precise regerar com outro render.
+O script está em `scripts/logo_final.py` caso precise regerar com outro
+render. Os dois `.py` de `scripts/` são utilitários de uso pontual, rodados
+a partir da pasta-mãe `CRONEX/`; não fazem parte do site e não entram na
+`dist/`.
