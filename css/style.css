@@ -59,12 +59,21 @@ p{margin:0}
 
 /* ---------- atmosfera ---------- */
 .atmos{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.aurora{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;will-change:transform}
+/* O teto de tamanho é por custo, não por estética: em tela larga, 60vw vira
+   mais de mil pixels de camada desfocada, e o desfoque custa em proporção à
+   área. Acima de 900px o olho não distingue a mancha, a placa de vídeo sim. */
+.aurora{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;will-change:transform;
+  max-width:900px;max-height:900px}
 .aurora.a{width:60vw;height:60vw;left:-18vw;top:-22vw;background:radial-gradient(circle,rgba(107,30,150,.75),transparent 68%);animation:drift1 26s var(--ease) infinite alternate}
 .aurora.b{width:52vw;height:52vw;right:-16vw;top:18vh;background:radial-gradient(circle,rgba(75,12,120,.7),transparent 68%);animation:drift2 32s var(--ease) infinite alternate}
 .aurora.c{width:46vw;height:46vw;left:22vw;bottom:-24vw;background:radial-gradient(circle,rgba(168,85,214,.28),transparent 70%);animation:drift1 38s var(--ease) infinite alternate-reverse}
-@keyframes drift1{to{transform:translate3d(9vw,7vh,0) scale(1.16)}}
-@keyframes drift2{to{transform:translate3d(-11vw,-6vh,0) scale(1.1)}}
+/* Só deslocamento, sem `scale`.
+   Mover uma camada é trabalho do compositor e sai de graça. Escalar uma camada
+   COM DESFOQUE obriga o navegador a refazer o desfoque a cada quadro, que é a
+   conta mais cara desta página — e o ganho visual de crescer 16% ao longo de 26
+   segundos é algo que ninguém percebe. */
+@keyframes drift1{to{transform:translate3d(9vw,7vh,0)}}
+@keyframes drift2{to{transform:translate3d(-11vw,-6vh,0)}}
 
 .mesh{position:absolute;inset:0;
   background:
@@ -515,6 +524,23 @@ section.chegou::after{content:"";position:absolute;inset:0;z-index:0;pointer-eve
   .foot{grid-template-columns:1fr 1fr}
 }
 @media (max-width:760px){
+  /* ---- peso no celular ----
+     As três auroras são camadas grandes com blur(90px), animadas e com
+     will-change: o telefone mantém as três em textura e recompõe a cada quadro,
+     e o desfoque é o filtro mais caro que existe em GPU de celular.
+
+     Aqui elas perdem o desfoque e o movimento, mas continuam pintando: o fundo
+     delas já é um radial-gradient que termina em transparente, ou seja, já nasce
+     suave. O que sai da tela é o custo, não a cor.
+
+     Para voltar ao efeito completo no celular, apague este bloco. */
+  .aurora{filter:none;animation:none;will-change:auto;opacity:.5}
+  .halo{animation:none}
+  /* Vidro fosco: o cartão já tem fundo próprio (--glass), e o menu tem fundo
+     96% opaco — o desfoque atrás deles é quase invisível e custa caro. */
+  .preview.glass{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .drawer{backdrop-filter:none;-webkit-backdrop-filter:none}
+
   .nav-links,.nav .btn{display:none}
   .burger{display:grid}
   .tiers{grid-template-columns:1fr}
