@@ -3,7 +3,8 @@
 Site estático separado em HTML, CSS, JS e assets. Publicado como Cloudflare Worker
 (static assets).
 
-**No ar:** https://cronex.thecronexweb.workers.dev
+**No ar:** https://cronexweb.com.br (e `www`). O endereço antigo,
+https://cronex.thecronexweb.workers.dev, ainda responde — ver "Domínio próprio".
 
 ## Estrutura
 
@@ -51,38 +52,50 @@ Depois acesse `http://localhost:8000`.
 
 ## Domínio próprio
 
-O domínio `cronexweb.com.br` está registrado e a zona vive na Cloudflare. Hoje
-ele só faz e-mail: os registros do Resend na saída e o Email Routing na entrada.
-**Nada responde na web** — quem digita o endereço no navegador recebe erro de
-resolução.
+**No ar desde 12/09.** `cronexweb.com.br` e `www.cronexweb.com.br` estão
+ligados ao Worker `cronex` como custom domains e servem este site, com a
+canônica das duas apontando para a raiz. O e-mail continua intacto: os três MX
+do Email Routing seguem respondendo, porque custom domain mexe em outro tipo de
+registro.
 
-O plano, e a ordem importa:
+O desenho:
 
 | Endereço | Vai para | Por quê |
 |---|---|---|
-| `cronexweb.com.br` e `www` | site institucional (Worker `cronex`) | é o endereço que vai em cartão, assinatura e anúncio |
-| `sistema.cronexweb.com.br` | painel de gestão (Worker `cronex-sistema`) | interno, `noindex`, e é o que destrava o Cloudflare Access |
+| `cronexweb.com.br` e `www` | site institucional (Worker `cronex`) — **feito** | é o endereço que vai em cartão, assinatura e anúncio |
+| `sistema.cronexweb.com.br` | painel de gestão (Worker `cronex-sistema`) — **pendente** | interno, `noindex`, e é o que destrava o Cloudflare Access |
+
+Raiz e `www` vão para o mesmo lugar de propósito. Eles não são endereços
+diferentes na cabeça de ninguém, e apontar cada um para um sistema faria metade
+das pessoas cair no painel interno ao digitar o nome da empresa.
 
 Ligar é pelo painel do Cloudflare, dentro de cada Worker, em **Domains &
 Routes → Add Custom Domain**. Ele cria o registro e o certificado sozinho, e
 **não mexe no e-mail**: MX, SPF e DKIM são de outros tipos e continuam onde
 estão.
 
-⚠️ **Os arquivos deste repositório já apontam para o domínio próprio** —
-canônica, `og:url`, `og:image`, `sitemap.xml` e `robots.txt`. Enquanto o
-domínio não estiver respondendo, **não publique**: o buscador seguiria uma
-canônica para um endereço que não resolve. A ordem certa é ligar o domínio
-primeiro e publicar depois.
+Canônica, `og:url`, `og:image`, `sitemap.xml` e `robots.txt` já citam o domínio
+próprio, e o site publicado com eles está no ar. A ordem importou: ligar o
+domínio primeiro, publicar depois. Ao contrário, o buscador seguiria uma
+canônica para um endereço que não resolvia.
 
-Assim que o domínio responder, troque `workers_dev` para `false` em
-`wrangler.jsonc` e publique de novo. Dois endereços servindo o mesmo site são
-duas cópias do mesmo conteúdo aos olhos do Google.
+**Falta desligar o endereço antigo.** Troque `workers_dev` para `false` em
+`wrangler.jsonc` e publique de novo. Enquanto os dois servirem o mesmo site,
+são duas cópias do mesmo conteúdo aos olhos do Google — a canônica já resolve
+isso na prática, mas não servir a cópia é mais limpo. Antes de desligar,
+confira que nada aponta para o endereço antigo: hoje ele ainda está na lista de
+origens aceitas da rota pública de leads, em `cronex-sistema/src/rotas/publico.js`.
 
 O endereço do sistema em `js/main.js` (`CONTATO.sistema`, para onde o formulário
 manda o lead) continua no `workers.dev` de propósito: ele só muda quando
 `sistema.cronexweb.com.br` existir, e essa troca vem junto com a do
 `PAINEL_URL` no Worker de gestão, o endereço de retorno do Google no Drive e a
 URL do webhook do Mercado Pago. Ver `cronex-sistema/README.md`.
+
+⚠️ **A lista de origens da rota pública de leads mora no outro repositório.**
+Mudar o endereço do site sem acrescentá-lo lá faz o formulário parar de mostrar
+o resultado do envio: a requisição sai, o lead é gravado, e o navegador esconde
+a resposta por CORS. Foi o que aconteceu em 12/09, corrigido no mesmo dia.
 
 ## Deploy
 
@@ -113,7 +126,8 @@ subdomínio workers.dev é `thecronexweb`.
    ```
 
 A config está em `wrangler.jsonc` (`name: "cronex"`, `assets.directory: "./dist"`).
-Sai em `https://cronex.thecronexweb.workers.dev`.
+Sai em `https://cronexweb.com.br`, e ainda em `https://cronex.thecronexweb.workers.dev`
+enquanto `workers_dev` não for desligado.
 
 > Não usar API token em arquivo. Se precisar de token (CI), passar por variável de
 > ambiente `CLOUDFLARE_API_TOKEN` e revogar depois.
