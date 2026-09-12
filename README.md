@@ -3,8 +3,8 @@
 Site estático separado em HTML, CSS, JS e assets. Publicado como Cloudflare Worker
 (static assets).
 
-**No ar:** https://cronexweb.com.br (e `www`). O endereço antigo,
-https://cronex.thecronexweb.workers.dev, ainda responde — ver "Domínio próprio".
+**No ar:** https://cronexweb.com.br (e `www`). O endereço `workers.dev` foi
+desligado em 12/09 — ver "Domínio próprio".
 
 ## Estrutura
 
@@ -79,12 +79,20 @@ próprio, e o site publicado com eles está no ar. A ordem importou: ligar o
 domínio primeiro, publicar depois. Ao contrário, o buscador seguiria uma
 canônica para um endereço que não resolvia.
 
-**Falta desligar o endereço antigo.** Troque `workers_dev` para `false` em
-`wrangler.jsonc` e publique de novo. Enquanto os dois servirem o mesmo site,
-são duas cópias do mesmo conteúdo aos olhos do Google — a canônica já resolve
-isso na prática, mas não servir a cópia é mais limpo. Antes de desligar,
-confira que nada aponta para o endereço antigo: hoje ele ainda está na lista de
-origens aceitas da rota pública de leads, em `cronex-sistema/src/rotas/publico.js`.
+**O endereço antigo foi desligado em 12/09**, com `workers_dev: false`.
+`cronex.thecronexweb.workers.dev` responde 404 e o site vive só no domínio
+próprio. Dois endereços servindo o mesmo conteúdo seriam duas cópias aos olhos
+do Google; a canônica já resolvia na prática, mas não servir a cópia é mais
+limpo.
+
+Antes de desligar, valeu conferir quem apontava para o endereço velho: a lista
+de origens da rota pública de leads (já atualizada), a cláusula de contrato e o
+registro de tratamento em `docs/lgpd/`, que citavam a política de privacidade
+por lá. Documento jurídico com link morto é problema de verdade.
+
+Para religar, é `workers_dev: true` e publicar. O aviso de "No targets deployed"
+que o wrangler mostra com ele desligado é esperado: os domínios personalizados
+são geridos no painel, não no arquivo de configuração, e continuam servindo.
 
 O endereço do sistema em `js/main.js` (`CONTATO.sistema`, para onde o formulário
 manda o lead) continua no `workers.dev` de propósito: ele só muda quando
@@ -126,8 +134,8 @@ subdomínio workers.dev é `thecronexweb`.
    ```
 
 A config está em `wrangler.jsonc` (`name: "cronex"`, `assets.directory: "./dist"`).
-Sai em `https://cronexweb.com.br`, e ainda em `https://cronex.thecronexweb.workers.dev`
-enquanto `workers_dev` não for desligado.
+Sai em `https://cronexweb.com.br` e `https://www.cronexweb.com.br`. O endereço
+`workers.dev` está desligado (`workers_dev: false`).
 
 > Não usar API token em arquivo. Se precisar de token (CI), passar por variável de
 > ambiente `CLOUDFLARE_API_TOKEN` e revogar depois.

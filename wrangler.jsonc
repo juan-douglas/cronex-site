@@ -2,17 +2,16 @@
   // Worker que serve a pasta dist/ como site estático.
   // Publica em https://cronex.thecronexweb.workers.dev
   //
-  // Domínio próprio: o site passa a atender em https://cronexweb.com.br (e www),
-  // ligado pelo painel do Cloudflare, no Worker, em Domains & Routes → Add
-  // Custom Domain. Ver README, seção "Domínio próprio".
+  // Domínio próprio, no ar desde 12/09: https://cronexweb.com.br e www, ligados
+  // no painel do Cloudflare em Domains & Routes → Add Custom Domain.
   //
-  // ⚠️ Depois que o domínio estiver respondendo, troque `workers_dev` para
-  // false. Enquanto os dois endereços servirem o mesmo site, o Google vê duas
-  // cópias do mesmo conteúdo e escolhe uma por conta própria — e as páginas já
-  // apontam a canônica para o domínio próprio.
+  // `workers_dev: false` desliga cronex.thecronexweb.workers.dev. Dois endereços
+  // servindo o mesmo site são duas cópias do mesmo conteúdo aos olhos do Google;
+  // a canônica já resolvia isso, mas não servir a cópia é mais limpo. Ligar de
+  // volta é trocar para true e publicar.
   "name": "cronex",
   "compatibility_date": "2025-01-01",
-  "workers_dev": true,
+  "workers_dev": false,
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
