@@ -49,6 +49,41 @@ python -m http.server 8000
 
 Depois acesse `http://localhost:8000`.
 
+## Domínio próprio
+
+O domínio `cronexweb.com.br` está registrado e a zona vive na Cloudflare. Hoje
+ele só faz e-mail: os registros do Resend na saída e o Email Routing na entrada.
+**Nada responde na web** — quem digita o endereço no navegador recebe erro de
+resolução.
+
+O plano, e a ordem importa:
+
+| Endereço | Vai para | Por quê |
+|---|---|---|
+| `cronexweb.com.br` e `www` | site institucional (Worker `cronex`) | é o endereço que vai em cartão, assinatura e anúncio |
+| `sistema.cronexweb.com.br` | painel de gestão (Worker `cronex-sistema`) | interno, `noindex`, e é o que destrava o Cloudflare Access |
+
+Ligar é pelo painel do Cloudflare, dentro de cada Worker, em **Domains &
+Routes → Add Custom Domain**. Ele cria o registro e o certificado sozinho, e
+**não mexe no e-mail**: MX, SPF e DKIM são de outros tipos e continuam onde
+estão.
+
+⚠️ **Os arquivos deste repositório já apontam para o domínio próprio** —
+canônica, `og:url`, `og:image`, `sitemap.xml` e `robots.txt`. Enquanto o
+domínio não estiver respondendo, **não publique**: o buscador seguiria uma
+canônica para um endereço que não resolve. A ordem certa é ligar o domínio
+primeiro e publicar depois.
+
+Assim que o domínio responder, troque `workers_dev` para `false` em
+`wrangler.jsonc` e publique de novo. Dois endereços servindo o mesmo site são
+duas cópias do mesmo conteúdo aos olhos do Google.
+
+O endereço do sistema em `js/main.js` (`CONTATO.sistema`, para onde o formulário
+manda o lead) continua no `workers.dev` de propósito: ele só muda quando
+`sistema.cronexweb.com.br` existir, e essa troca vem junto com a do
+`PAINEL_URL` no Worker de gestão, o endereço de retorno do Google no Drive e a
+URL do webhook do Mercado Pago. Ver `cronex-sistema/README.md`.
+
 ## Deploy
 
 Publicado como **Cloudflare Worker** servindo arquivos estáticos, na conta cujo

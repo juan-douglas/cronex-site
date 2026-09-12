@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://cronex.thecronexweb.workers.dev/sitemap.xml
+Sitemap: https://cronexweb.com.br/sitemap.xml
