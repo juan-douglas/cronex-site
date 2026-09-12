@@ -106,10 +106,24 @@ manda o lead) continua no `workers.dev` de propósito: ele só muda quando
 `PAINEL_URL` no Worker de gestão, o endereço de retorno do Google no Drive e a
 URL do webhook do Mercado Pago. Ver `cronex-sistema/README.md`.
 
-⚠️ **A lista de origens da rota pública de leads mora no outro repositório.**
-Mudar o endereço do site sem acrescentá-lo lá faz o formulário parar de mostrar
-o resultado do envio: a requisição sai, o lead é gravado, e o navegador esconde
-a resposta por CORS. Foi o que aconteceu em 12/09, corrigido no mesmo dia.
+⚠️ **Duas coisas fora deste repositório quebram quando o endereço do site muda.**
+As duas aconteceram em 12/09 e foram corrigidas no mesmo dia.
+
+**1. A lista de origens da rota pública de leads**, em
+`cronex-sistema/src/rotas/publico.js`. Sem o endereço novo lá, o formulário
+grava o lead e o navegador esconde a resposta por CORS — o visitante não
+descobre se deu certo.
+
+**2. Os hostnames do widget do Turnstile**, no painel do Cloudflare, em
+Turnstile → o widget → Editar. A chave só funciona nos hostnames listados. Com o
+endereço novo fora da lista, o widget não carrega e o visitante vê, dentro do
+formulário, uma caixa da Cloudflare dizendo *"Não foi possível conectar ao
+site"*. Parece o site fora do ar, e não é: é só o verificador anti-robô sendo
+recusado. Sem o widget não há token, e a rota pública recusa o envio — ou seja,
+**o formulário para de funcionar de verdade**.
+
+Hostnames configurados hoje: `cronex.thecronexweb.workers.dev`,
+`cronexweb.com.br` e `www.cronexweb.com.br`.
 
 ## Deploy
 
