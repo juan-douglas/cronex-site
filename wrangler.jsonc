@@ -5,13 +5,19 @@
   // Domínio próprio, no ar desde 12/09: https://cronexweb.com.br e www, ligados
   // no painel do Cloudflare em Domains & Routes → Add Custom Domain.
   //
-  // `workers_dev: false` desliga cronex.thecronexweb.workers.dev. Dois endereços
-  // servindo o mesmo site são duas cópias do mesmo conteúdo aos olhos do Google;
-  // a canônica já resolvia isso, mas não servir a cópia é mais limpo. Ligar de
-  // volta é trocar para true e publicar.
+  // `workers_dev: true` mantém cronex.thecronexweb.workers.dev respondendo, ao
+  // lado do domínio próprio.
+  //
+  // Ele chegou a ser desligado em 12/09 e foi religado no mesmo dia: links e
+  // atalhos antigos ainda apontavam para lá, e quem abria recebia a tela de erro
+  // 1042 da Cloudflare. Duas cópias do mesmo site no ar não atrapalham a busca
+  // aqui, porque as páginas declaram a canônica no domínio próprio — o Google
+  // indexa `cronexweb.com.br` e ignora a cópia.
+  //
+  // Desligar de novo é trocar para false e publicar, depois de trocar os atalhos.
   "name": "cronex",
   "compatibility_date": "2025-01-01",
-  "workers_dev": false,
+  "workers_dev": true,
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
